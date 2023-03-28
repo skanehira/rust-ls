@@ -27,33 +27,42 @@ pub fn visit_dirs(dir: &Path) -> io::Result<Vec<String>> {
     Ok(paths)
 }
 
+pub fn current_dir(dir: &Path) -> io::Result<Vec<String>> {
+    let mut entries = vec![];
+
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        if should_skip(&entry.path().to_string_lossy()) {
+            continue;
+        }
+        entries.push(entry.file_name().to_string_lossy().to_string());
+    }
+    entries.sort();
+
+    Ok(entries)
+}
+
 fn should_skip(path: &str) -> bool {
-    let pattern = Regex::new(r"\./(.git|target).*").unwrap();
+    let pattern = Regex::new(r"\./.git.*").unwrap();
     pattern.is_match(path)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_execlude_word() {
-        for word in vec!["./.git", "./target"] {
-            assert!(should_skip(word));
-        }
+        assert!(should_skip("./.git"));
+        assert_ne!(should_skip("./.target"), true);
     }
 
     #[test]
-    fn test_list() -> io::Result<()> {
+    fn test_current_dir() -> io::Result<()> {
         let dir = Path::new(".");
-        let want = vec![
-            "./Cargo.toml",
-            "./Cargo.lock",
-            "./src/lib.rs",
-            "./src/main.rs",
-        ];
-        assert_eq!(want, visit_dirs(dir)?);
+        let want = vec!["Cargo.lock", "Cargo.toml", "LICENSE", "src", "target"];
+        assert_eq!(want, current_dir(dir)?);
         Ok(())
     }
 }
-

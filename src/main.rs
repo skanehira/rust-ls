@@ -1,5 +1,5 @@
 use clap::Parser;
-use rust_ls::visit_dirs;
+use rust_ls::current_dir;
 use std::{env, io, path::Path};
 
 #[derive(Parser, Debug)]
@@ -14,7 +14,7 @@ fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let dir = &args[1];
 
-    let dirs = visit_dirs(Path::new(&dir))?;
+    let dirs = current_dir(Path::new(&dir))?;
     for d in dirs {
         println!("{}", d);
     }
