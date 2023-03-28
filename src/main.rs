@@ -1,23 +1,29 @@
 use clap::Parser;
-use rust_ls::current_dir;
-use std::{env, io, path::Path};
+use rust_ls::{current_dir, print_recursively_output, visit_dirs};
+use std::{io, path::Path};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    // TODO: implment -a
-    //#[arg(short, default_value_t = false)]
-    //all: bool,
+    dir: Option<String>,
+
+    #[arg(short, default_value_t = false)]
+    recursively: bool,
 }
 
 fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
-    let dir = &args[1];
+    let args = Args::parse();
+    let dir = args.dir.unwrap_or(".".into());
 
-    let dirs = current_dir(Path::new(&dir))?;
-    for d in dirs {
-        println!("{}", d);
+    if args.recursively {
+        let mut output = visit_dirs(Path::new(&dir))?;
+        output[0].dir = None;
+        print_recursively_output(output);
+    } else {
+        let dirs = current_dir(Path::new(&dir))?;
+        for d in dirs {
+            println!("{}", d);
+        }
     }
     Ok(())
 }
-
